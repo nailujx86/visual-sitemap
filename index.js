@@ -12,18 +12,29 @@ const fs = require('fs');
   
   var rootNode = new SitemapNode(await page.title(), await page.url(), "page", await page.screenshot())
   var currentNode = rootNode
+  var startedAlready = false
   const test = async _ => {
-    const pos = await page.evaluate(async () => {
-      return stopAndReturnClickEvent()
-    })
+    if (startedAlready) {
+      return
+    } else {
+      startedAlready = true
+    }
+    var pos
+    try {
+      pos = await page.evaluate(async () => {
+        return (await stopAndReturnClickEvent())
+      })
+    } catch (e) {
+      console.error(e)
+    }
     let screenshot = await page.screenshot({clip: {x: pos.x - 200, y: pos.y - 200, width: 400, height: 400}})
     let title = await page.title() 
-    let url = await page.url()
+    let url = page.url()
     currentNode.children.push(new SitemapNode(title, url, "action", screenshot))
     await page.evaluate(() => {
       continueEvent()
     })
-    console.log("ja", JSON.stringify(pos))
+    startedAlready = false
   }
   page.on('load', test)
   page.on('load', async loadedpage => console.log(await loadedpage.title()));
