@@ -1,18 +1,24 @@
-var cachedEvent = null
+var cachedTarget
+var cachedEvent
+var cacheExecuted = false
 
 function promiseHandler(evt, resolve) {
+    if (cacheExecuted) {
+        cacheExecuted = false
+        return
+    }
     evt.preventDefault()
-    evt.stopPropagation()
+    evt.isDefaultPrevented = () => false
     document.removeEventListener('click', promiseHandler)
-    cachedEvent = evt
+    cachedTarget = evt.target
+    cachedEvent = new MouseEvent('click', evt.nativeEvent)
     console.log("cached!")
-    console.log(evt)
-    document.eventResolver({x: evt.x, y: evt.y})
+    return document.eventResolver({x: evt.x, y: evt.y})
 }
 
 function stopAndReturnClickEvent() {
-    document.removeEventListener('click', promiseHandler)
     return new Promise((resolve, _reject) => {
+        document.removeEventListener('click', promiseHandler)
         document.eventResolver = resolve
         document.addEventListener('click', promiseHandler)
     })
@@ -20,5 +26,6 @@ function stopAndReturnClickEvent() {
 
 function continueEvent() {
     console.log("retrieved!")
-    return cachedEvent.target.dispatchEvent(cachedEvent)
+    cacheExecuted = true
+    cachedTarget.dispatchEvent(cachedEvent)
 }
